@@ -1,0 +1,115 @@
+
+COMANDOS ÚTILES
+
+	INSTALACIÓN DE PROGRAMAS
+		
+		apt list -> Saca una lista de todos aquellos programas y paquetes que tenemos instalados
+
+	COMANDOS DE FILTRADO
+		
+		grep "Palabra, número o símbolo" "fichero" -> Encuentra todas las coincidencias en el fichero
+
+
+
+	COMANDOS DE PERMISOS Y PROPIETARIOS
+
+		chmod <u,g,o><+,-><r,w,x> <fichero o directorio> -> Cambiar permisos de archivos y directorios
+	
+			chmod u+x,g-w prueba.txt
+			chmod u-r prueba.txt
+
+		*Forma de representar permisos -> U: rw- (110), G: r-x (101), O: --x (001)
+
+		chmod 664 prueba.txt -> Cambiar permisos: U: 110 (rw-), G: 110(rw-), O: 100 (r--)
+
+		chown <nuevo usuario propietario> <directorio o fichero a cambiar de propietario> -> Cambiar propietario de fichero o archivos
+
+		chgrp <nuevo grupo propietario> <directorio o fichero a cambiar de grupo> -> Cambiar grupo propietario de directorios o ficheros
+
+		passwd <usuario> -> Establece o cambia la contraseña de un usuario 
+
+		
+	ENLACES
+
+		ln <Archivo o directorio que lleva al archivo al que le vamos a añadir un enlace duro> <nombre nuevo fichero> -> Crear enlace duro o hard link
+
+			*Un enlace duro crea dos archivos que apuntan al mismo fichero
+
+		ln -s <Archivo objetivo> <Nombre de archivo enlazado> -> Crea un enlace blando, simbólico o soft link al archivo que le indiquemos
+
+			*La diferencia entre un hard link y un soft link, es básicamente que un hard link genera un puntero
+			 al archivo objetivo, mientras que el soft link no del todo. Si modificamos texto en el archivo de
+			 enlace generado mediante un hard link, esto se verá reflejado en el archivo original (Y esto pasa
+			 tanto con el hard link como con el soft link). La diferencia es que si borramos el fichero original
+			 el fichero creado por hard link seguira existiendo de forma normal, mientras que si hubiese sido creado
+			 mediante un soft link, borrar el fichero original implicaría que el fichero creado con el soft link se quede
+			 como enlace colgante. Sin embargo, si escribimos en este enlace colgante, el fichero original volvería
+			 a existir y con el contenido que hemos escrito en el fichero creado mediante el soft link.
+
+
+	REDIRECCIONES Y PIPES
+
+		stdin -> Standard Input
+		stout -> Standard Output
+		stderr -> Standard Error
+
+		echo "Hola Mundo" -> Mediante stdout nos imprime un mensaje por pantalla	
+		echo "Hola Mundo" > prueba.txt -> Podemos redirigirlo a un fichero de texto
+		echo "Hola Mundo 2" >> prueba.txt -> Añade el echo al mismo fichero sin sobreescribirlo
+		ls -l > fichero.txt -> Se puede redirigir la salida de cualquier programa
+
+		apt list | grep alacritty -> Redirige la salida de apt list (La cual muestra todos los paquetes y programas que tenemos instalados) al programa grep. 
+		Por lo tanto, grep usará de entrada la salida de "apt list"
+		
+		ls -l | grep Documentos -> La salida del comando "ls -l" se la pasamos a grep como entrada
+
+
+	EDITOR DE CADENAS DE TEXTO	
+		
+		cut -d " " -f 3 productos.txt -> La opción "d" es para indicar que tipo de delimitador tenemos (Espacio en este caso), 
+		y la opción "-f" para indicar que campo o "field" queremos (En este caso el tercero). Sirve para cortar cadenas.
+		
+		cut -d " " -f 3,5 1.txt -> Saca los campos 3 y 5
+	
+		cut -d " " -f 3-5 1.txt -> Saca los campos del 3 al 5
+
+		cut -d " " -f 3- 1.txt -> Saca los campos a partir del 3
+
+		sed "s/  */ /g" fichero.txt -> La opción "s" indica que vamos a sustituir algo, entre las dos primeras barras ponemos lo que queremos sustituir, 
+		entre la segunda y la tercera barra ponemos por que lo queremos sustituir, la "g" sirve para indicar que queremos aplicar estos cambios a todo 
+		el documento y no solo a la primera frase que cumpla la condición. Sirve para editar cadenas de texto.
+
+		ls -l | sed "s/  */ /g" > prueba.txt
+	
+		sed "s/  */ /g" fichero.txt | cut -d " " -f 9 -> Sustituye todos los espacios de más por un solo espacio con "sed" y luego le pasa esa salida al cut, 
+		para que el cut pueda darnos el campo número 9 de esa salida
+		
+		ls -l | tail -n +2 | sed "s/  */ /g" | cut -d " " -f 9
+	
+		ls -l | tail -n +2 | sed "s/  */ /g" | cut -d " " -f 1,9 > ejercicio.txt
+
+	
+	Fichero de Configuración
+		
+		cat /etc/passwd -> Contiene usuarios. Es un fichero de configuración.
+		sudo cat /etc/shadow -> Contraseñas encriptadas de los usuarios.
+		sudo cat /etc/sudoers -> Ver usuarios con permisos sudo.
+		cat /etc/group -> Ver grupos.
+		cat /etc/group | grep danibz -> Ver a que grupos pertenece mi usuario.
+
+
+	Mongodb
+
+		systemctl status mongodb -> Ver status del servidor mongodb.
+		systemctl stop mongodb -> Parar servidor mongodb.
+		systemctl star mongodb -> Arrancar servidor mongodb.
+		systemctl enable mongodb -> Permite que cada vez que arranque el PC o Máquina Virtual se ejecute en segundo plano el servicio que indicamos. En este caso mongodb.
+		systemctl disable mongodb -> Quita el permiso a ese servicio de que arranque cada vez que se enciende el PC.
+
+
+	Creación de Comandos
+
+                $PATH -> Variable que contiene todas las rutas con programas de comandos.
+                PATH="$PATH:/home/danibz/Escritorio/Comandos" -> Concatenamos a la variable $PATH el directorio en el que se encuentren nuestros scripts o comandos para
+		tener nuestros propios comandos.
+
