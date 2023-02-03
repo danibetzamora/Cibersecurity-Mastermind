@@ -1,0 +1,447 @@
+CURSO S4VITAR
+
+
+	PRIMEROS COMANDOS ÚTILES
+		
+		cat /etc/passwd -> Nos imprime en pantalla información acerca de los usuarios, directorios de trabajo...
+
+		cat /etc/shadows -> Solo podemos hacerlo con root, y sirve para ver los hashes de las contraseñas de los usuarios.
+
+		cat /etc/login.defs -> Informacion acerca de como se procesa el login de los usuarios.
+
+		cat /etc/login.defs | grep "ENCRYPT_METHOD" -> Nos sirve para ver con que función se obtienen los hashes de las contraseñas.
+
+		cat /etc/shells -> Nos muestra en pantalla todos los tipos de shells o consolas disponibles.
+
+		echo $SHELL -> Muestra en pantalla el contenido de la variable SHELL, la cual contiene la shell que estamos usando.
+		
+		cat /etc/passwd | grep "sh$" -> Pasa el output del primer comando al comando grep, y este filtra todo aquello que tenga la cadena "sh"
+		y finalice estrictamente con un "h" (Se lo indicamos con el "$").
+		
+		cat /etc/passwd | grep "sh$" | cut -d ":" -f 1 -> Pasa la salida del cat al grep, para extraer únicamente aquellas cadenas que contengan
+		"sh" y que terminen estrictamente por la "h". Además, pasa esta última salida al cut, que nos pasará el campo 1 delimitado con ":", lo 
+		que nos dará como resultado los nombres de los usuarios.
+
+		cat /etc/passwd | grep "sh$" | awk '{print $1}' FS:":" -> Hace lo mismo que el de arriba.
+		
+		whoami -> Quien soy
+
+		id -> Nos pasa nuestro id, nuestro id de grupo, y los grupos a los que pertenecemos.
+	
+		sudo -l -> Nos permite ver los privilegios que tiene ese usuario como superusuario.
+
+		ls -l ./ | tail -n 3 -> Filtra únicamente los tres últimos resultados.
+
+		ls -l ./ | head -n 3 -> Filtra únicamente los tres primeros resultados de todos los qu se pasan como entrada del ls -l del directorio actual a través de un pipe.
+
+		/usr/share/wordlists -> Contiene diccionarios como rockyou.txt.
+
+		gunzip fichero.txt -> Descomprimir fichero gz.
+
+		gunzip -k fichero.txt -> Descomprimir fichero gz sin destruir el fichero comprimido original.
+
+		wc -w fichero.txt -> Cuenta el número de palabras del fichero.
+
+		wc -l fichero.txt -> Cuenta el número de líneas del fichero.
+		
+		wc -c fichero.txt -> Cuenta el número de bytes del fichero.
+
+		cat rockyou.txt | grep "^pepito$" -> Busca en el fichero rockyou.txt la cadena que empieze por "p" y acabe por "o"
+		y que sea "pepito".
+
+		cat /etc/hosts -> Nos permite ver los hosts del sistema, nuestra ip, la del router...		
+	
+		file /bin/cat -> Nos da información acerca del archivo. En este caso nos dice que se trata de un archivo ejecutable de 64 bits para linux.
+		
+		ps -> Podemos ver los procesos que se están ejecutando y sus respectivos id de procesos (PID).
+		
+
+
+	CREACIÓN Y GESTIÓN DE USUARIOS
+		
+		En primer lugar deberemos convertirnos en root (sudo su) y crear en /home el directorio del usuario. En este caso ha sido /home/panzeroto.
+
+		useradd -d /home/panzeroto -s /bin/bash panzeroto -> Añadir usuario en el directorio especificado, con el tipo de shell especificada y el nombre.
+
+		useradd -m panzeroto -> También añade un nuevo usuario, pero creandole el /home/panzeroto diectamente. 
+		
+		groupadd School -> Añade un grupo con ese nombre.
+
+		cat etc/group -> Nos permite ver todos los grupos.	
+	
+		passwd panzeroto -> Genera una contraseña para el usuario indicado.
+		
+		chown panzeroto panzeroto/ -> Cambia el propietario del directorio o fichero indicado al final.
+
+		chgrp panzeroto panzeroto/ -> Cambia el grupo del directorio o fichero indicado al final.
+
+		chown usuario:grupo panzeroto/ -> Cambia directamente el propietario y el grupo del directorio o fichero indicado al final.
+
+		usermod -a -G School danibz -> Añade (-a) a un grupo (-G) de nombre "School" al usuario "danibz".
+		
+
+
+	PERMISOS SUID
+
+		Permiso SUID -> Permite ejecutar programas con los privilegios del propietario en vez de con los del usuario que lo está ejecutando.
+
+		Para activarlo tedremos que realizar lo siguiente -> chmod 4755 miprograma -> EL 4 indica que queremos activar permisos SUID, el resto son permisos normales.
+
+		(-rwsr-xr-x)
+
+
+		Permiso SGID -> Igual que el SUID, pero en vez de ejecutar el programa con los privilegios del propietario lo hará con los del grupo.
+	
+		Para activarlo -> chmod 2755 mi programa -> El 2 da los permisos SGID y el resto son permisos normales.
+
+		Cuando un directorio tiene asignado este permiso, todos los ficheros que se creen en él pertenecerán al grupo del propietario sin 
+		importar cual sea el grupo del usuario que lo cree.
+
+		(-rwxr-sr-x)
+
+		
+		Sticky Bit -> Con este bit activo, solo el root y el propietario del fichero podrán borrar o renombrar los ficheros.
+		El resto de usuarios podrán únicamente leer y modificar los ficheros.
+		
+		Para activarlo -> chmod 1755 miprograma.
+	
+		(drwxr-xr-t)
+	
+
+
+	COMANDOS ÚTILES SUID, GSID, STICKY BIT
+
+		which find -> Nos devuelve la ruta de donde se encuentra el ejecutable que le pasamos por parámetro.
+
+		which find | xargs ls -l -> La salida del which la pasamos como parámetro al xargs, que se encarga de recoger esa entrada y pasársela
+		como parámetro al comando que especifiquemos. En este caso, xargs pasa la ruta del find como parámetro al "ls -l", ya que este no usa
+		directamente la entrada que pasamos por tubería.	
+		
+
+		chmod 4755 /usr/bin/find -> Damos permisos SUID siendo root al comando find
+	
+		./find . -exec /bin/sh -p \; -quit -> Siendo usuario sin privilegios podemos convertirnos en root.
+
+			./find . -exec cat /etc/passwd \; -quit -> Al tener el comando find permisos SUID, ejecutaremos ese programa como el propietario (root),
+			por lo que buscando la vulnerabilidad que presenta que ese programa tenga permisos SUID, en este caso podemos usar el flag -exec para ejecutar 
+			los programas que queramos con privilegios root, podremos inyectar cualquier comando que nosotros queremos. En este caso ha sido el cat.
+
+		
+		EXPLICACIÓN DETALLADA VULNERABILIDAD SUID DEL FIND
+
+			Para empezar, copiamos el ejecutable de find en el directorio temporal. A la vez, nos dirigimos al directorio temporal. Luego de eso, le damos
+			permisos SUID al ejecutable find. Por último, listamos el contenido del directorio para comprobar que el programa find tiene permisos SUID.
+
+				cp /usr/bin/find /temp/find && cd /temp && chmod +s find && ls -l -> Hay que hacerlo como root para que root sea el propietario.
+
+			
+			Después de esto, usaremos el binario find, siendo un usuario sin privilegios, para encontrar recursos con permisos SUID.
+
+				find / -perm -u=s -user root -type f -exec ls -l {} \; 2>/dev/null
+
+			Con / le indicamos al find que busque desde la raíz del sistema.
+
+			Con -perm establecemos que solo busque recursos donde el permiso de usuario propietario "-u" sea igual a suid "-s".
+
+			Con -user indicamos que solo busque recursos donde el propietario sea root. Porque sino nos saldrían archivos con permisos suid pero que 
+			pertenecen a otros propietarios, y esto no nos interesa porque queremos usar los privilegios de root.
+
+			Con -type decimos el tipo de recurso que queremos. En este caso queremos encontrar archivos ejecutables.
+
+			exec ls -l {} \; -> Con el parámetro -exec podemos ejecutar comandos que reciben como parámetro el resultado de la búsqueda del find.
+			En este caso, le decimos al parámetro exec que con los resultados del comando find, les haga un "ls -l" para ver sus permisos. Dentro
+			de las llaves se sustituirá por cada resultado que vaya encontrando find y por lo tanto se irá ejecutando el comando que hayamos in-
+			dicado con cada búsqueda. El "\;" es algo obligatorio para finalizar los comandos realizados a través del parámetro -exec. Por último,
+			con 2>/dev/null, redirigimos el estándar error al directorio /dev/null para que no muestre ningún error, ni permisos denegados por 
+			pantalla.
+
+
+			Por último, deberemos usar el parámetro -exec para ejecutar, en vez de un ls, una shell, por ejemplo sh. En este ejemplo, si ejecutamos
+			el find como nuestro usuario, se ejecutaría el find que está en /usr/bin. La solución para esto, sería agregar la ruta de temp al path o,
+			por otro lado, podemos ejecutar el find de /temp/ desde su ruta absoluta y ahí usar el parámetro -exec para que ejecute una shell como
+			su propietario, es decir, root.
+		
+				/temp/find . -exec /bin/sh -p \; -quit
+	
+			En este caso, estaremos ejecutando el programa find con privilegios de root (Desde el directorio temp, pues ese find es el que tiene
+			permisos SUID) a todos los directorios y ficheros del directorio en el que estemos. Eso lo especificamos con el punto ".", pues al no
+			pasar ningún tipo de filtro al find, nos listará o encontrará todos los ficheros del direcctorio en el que nos encontremos. Después de
+			eso usaremos el parámetro -exec, que como expliqué anteriormente, sirve para ejecutar un comando dandole como parámetro lo que hayamos
+			obtenido como resultado del find. En este caso, el find simplemente ha listado los recursos disponibles del directorio en el que nos 
+			encontramos y con -exec estamos ejecutando una shell sh (Programa al cual no usa nada de lo que el find ha dado como resultado).
+			Por eso mismo, el -exec ignora lo que haya proporcionado el find, y simplemente ejecuta el comando indicado con privilegios root.
+			De esta manera, se habrá ejecutado una shell con privilegios de root, y si hacemos un whoami veremos que somos root. 
+
+			Por otra parte, el parámetro -p lo necesitamos usar puesto que nuestro UID y GID no coincide con nuestros EUID y EGID, y queremos
+			que la shell se ejecute con nuestro EUID.
+
+			El parámetro -quit lo usamos para que el comando se detenga después de la primera ejecución, porque si no lo pusiéramos, se ejecutaría
+			tantas veces, como recursos hubiera en el directorio en el que hemos ejecutado el find. Una posible solución para no tener que usar el
+			parámetro -quit, es ejecutar el find en un directorio que no tenga nada. 
+	
+
+
+	COMANDOS DE CARACTERÍSTICAS DE MÁQUINA
+
+		uname -a -> Nos da información de la máquina.
+		
+		lsb_release -a -> Nos da más información.
+
+
+
+	CRACKER DE CONTRASEÑAS
+
+		cat /etc/shadow | grep pepito > hash.txt -> Guardamos el hash de la contraseña de pepito en un fichero.
+
+		john --wordlist=rockyou.txt hash.txt -> Con john y el diccionario de palabras rockyou podremos crackear la contraseña hasheada del archivo hash.txt.
+
+		john --format=crypt hash.txt -> Esto también vale.
+
+		john --show hash.txt -> Nos enseña la contraseña del fichero que hemos crackeado. Básicamente sustituye el hash por la
+		contraseña real, pues al crackearla una vez, relaciona ese hash con el hash de la contraseña crackeada y lo sustituye.
+
+			
+
+	EXPLOTACION DE PRIVILEGIOS
+
+		En primer lugar, si tenemos el fichero /etc/passwd con privilegios de escritura para otros (-rw-r--rw-), esto dará pie a vulnerabilidades.
+
+		Podemos identificar que archivos tienen capacidad de escritura, siendo un usuario normal sin privilegios (pepito).
+
+			find / -writable 2>/dev/null 
+			
+			find / -writable 2>/dev/null | grep etc -> Nos busca en la raíz los archivos en los que podemos escribir y nos filtra
+			los resultadados con aquellos que tengan la cadena "etc". De esta manera si el /etc/passwd tiene capacidad de 
+			escritura para otros, como es el caso, podremos identificarlo a través de este comando.
+		
+		Si hacemos un cat /etc/passwd obtenemos lo siguiente -> pepito:x:1001:1002::/home/pepito:/bin/bash
+		En lo cual podemos distinguir el nombre del usuario, la contraseña, su UID, su GID, su home y su tipo de shell.
+
+		Cuando hacemos un su "danibz", el comando su comprueba si ese usuario se encuentra en el /etc/passwd, y si es así, nos solicita contraseña.
+
+		Cuando damos la contraseña, internamente se hashea con SHA512 como hemos visto y también la compara con el valor de :x: del /etc/passwd para ver si coinciden.
+
+			El valor de x lo podemos ver en el /etc/shadow -> pepito:$y$j9T$qUbZxCiHUTly6964v8WZ6/$Ky0xLizJOUTmDNxjgFZB8UTmS72G7HpCov8luGjqUM9:18954:0:99999:7::: 
+		
+		Generamos una contraseña de tipo DesUnix -> openssl passwd (En este caso será "hola").
+
+		La contraseña generada es -> /nVsA3FfTSU/w
+
+		Podemos identificar que tipo de hash es -> hash-identifier (Y luego introducimos el hash).
+
+		También podemos identificarlo con el comando -> hashid /nVsA3FfTSU/w
+
+		Después de esto, como tenemos capacidad de escritura como usuario pepito (otros), podremos editar el /etc/passwd.
+		En él, podremos poner el hash de la contraseña que hemos generado en vez de la x que aparece al lado de root.
+		De esta manera, si hacemos un sudo su, para cambiar al usuario root, e introducimos la contraseña "hola",
+		internamente se hasheará la contraseña "hola" que acabamos de introducir y se comprobará con el valor que se encuentra en
+		"x" que ahora es nuestro hash. Coincidirán, y por lo tanto podríamos acceder al usuario root.
+
+		Por esto mismo, hay que tener cuidado con los permisos que se asignan a los ficheros.
+
+
+
+	TAREAS CRON
+
+		Para empezar nos dirigimos al siguiente directorio -> /etc/cron.d -> Cualquier fichero que pongamos en este
+		directorio con la estructura propia de cron, será ejecutado por el servicio cron, siempre y cuando esté activo.
+
+		Comprobamos como se encuentra el servicio cron -> service cron status
+
+		Creamos el archivo con formato cron (Tarea que se va a ejecutar en el intervalo que digamos) -> nano tarea
+
+		En ese archivo introducimos lo siguiente -> * * * * * root /home/danibz/Desktop/file.sh
+
+		De esta forma, especificamos con los 5 asteriscos que queremos que se ejecute cada minuto, por otra parte
+		le decimos que queremos que sea root quien ejecute esa tarea, y por último con la ruta absoluta, le especificamos
+		al cron donde se encuentra el fichero o script ejecutable que tiene que ejecutar en ese intervalo.
+
+		Usamos service cron stop para parar el servicio.
+
+		Usamos service cron start para iniciar el servicio.
+
+		Luego iremos a la ruta especificada en el fichero cron y crearemos nuestro script -> touch file.sh
+
+		Le damos permisos de ejecución para que pueda ser ejecutado por cron -> chmod +x file.sh
+
+		En ese fichero escribiremos un código sencillo que se ejecutará a cada minuto, como por ejemplo, borrar 
+		recursivamente el directorio /tmp
+	
+			#!/bin/bash
+
+			sleep 10
+
+			rm -r /temp/*
+
+
+	
+	MONITORIZACIÓN DE TAREAS CRON
+
+		Primero, crearemos un script llamado procmon.sh (Monitorización de procesos) -> touch procmon.sh
+
+		Le damos permisos de ejecución -> chmod +x procmon.sh
+		
+		Con el comando ps -eo command somos capaces de ver todos los comandos que se están ejecutando a nivel de sistema.
+
+		Es bastante útil para este ejercicio entender el comando -> diff file1 file2
+
+		Con este comando somos capaces de ver las diferencias entre ambos, pues nos mostrará por pantalla, que había
+		anteriormente en el file1 y que hay ahora en su lugar en el file2. Por lo que se podría decir que si en file1
+		tenemos la cadena "hola" y en file2 la cadena "adios", nos indicará que el hola ha salido (<) y en su lugar ha
+		entrado (>) el adiós de la siguiente manera:
+
+			<"hola"
+			>"adios"
+
+		Antes de continuar con el contenido del script, explicaré algunos detalles a tener en cuenta para entender el script.
+
+			En el script veremos que recogemos la salida del comando "ps -eo command" en dos variables, una llamada
+			old_process y otra llamada new_process. Para recoger la salida de este comando podemos hacerlo con $()
+			en vez de con ` `. Es decir $(ps -eo command) o `ps -eo command` (Mejor usar $() por si hay anidaciones).
+
+			Después de esto, tendremos que pasarle el contenido de ambas variables (Que contienen texto) al diff.
+			Esto podemos hacerlo así -> diff <(echo "$old_process") <(echo "$new_process")
+			Como vemos, con a través del echo redirige el contenido de ambas variables al comando diff como si fueses
+			ficheros, pues estamos haciendo una redirección de entrada. El primer parámetro será old_process y el 
+			segundo new_process.
+
+			Luego habrá que filtrar los resultados del diff por aquellos que contentan un ">" o un "<" en sus cadenas.
+			Para ello explicaré algunas características del comando grep.
+			En este caso usaremos grep "[\<\>]". De esta manera, le decimos que queremos filtrar por aquellas cadenas
+			que contengan la siguiente expresión regular (Esto lo hacemos a través de los corchetes). La expresión regular
+			nos dice que queremos filtrar todas aquellas cadenas que contenfan un ">" o un "<". Para indicar esto dentro
+			de la expresión regular, debemos escapar ambos caracteres especiales.
+
+		El contenido del script es el siguiente
+
+			#!/bin/bash
+
+			old_process=$(ps -eo command)
+
+			while true; do
+				new_process=$(ps -eo command)
+				diff <(echo "$old_process") <(echo "$new_process") | grep "[\<\>]" | grep -v "kworker"
+				old_process=$new_process
+			done
+		
+		Con la opción -v en grep, es decir, grep -v "kworker", lo que hacemos es quitar todas aquellas líneas o frases
+		que contengan la cadena "kworker".
+		
+		Si ejecutamos este script, veremos que se está ejecutando una tarea CRON. Podemos ver perfectamente en que ruta se
+		está ejecutando, en este caso, en /home/danibz/Desktop/file.sh
+		Sabiendo esto, si hacemos un ls -l de esa ruta podremos ver los permisos. Y con esto nos damos cuenta de que ese fichero
+		que esta siendo ejecutado cada ciertos intervalos de tiempo, tiene permisos de escritura para otros, y que además está
+		siendo ejecutado por root.
+		Como el archivo es ejecutado por root a través de las tareas cron, y tenemos capacidad de escritura en él, simplemente
+		con modificarlo y poner en el chmod 4755 /bin/bash, le daremos permisos SUID al bash siendo root, por lo que cualquier
+		usuario podrá ejecutar bash como el propietario del mismo (root). Así que si ejecutamos el /usr/bin/bash siendo root,
+		ejecutaremos una shell con los privilegios de root, y seremos root.
+
+		Una vez hemos modificado el archivo, podemos monitorizar el binario bash segundo a segundo para ver su cambio de permisos
+		con el siguiente comando.
+
+			watch -n 1 ls -l /bin/bash
+
+		Por último, si ejecutamos bash simplemente, seguiremos siendo pepito, por lo que hay que ejecutarlo de la siguiente
+		manera para que ejecute el binario con nuestro EUID, que en ese momento será root, ya que al ejecutar un binario
+		con permisos SUID, lo ejecutaremos como si fuéramos el propietario de forma temporal. De esta manera, nuestro EUID
+		en ese momento será root, y tenemos que especificarlo a la hora de ejecutar bash para ejecutarlo como root.
+
+			bash -p
+
+
+
+	PATH HIJACKING
+
+		Debemos crear un fichero siendo root (Para más adelante tener los privilegios de root) -> touch backup.c
+
+		El fichero contendrá el siguiente código:
+
+			#include <stdio.h>
+
+			void main(){
+	
+				setuid(0);
+
+				printf("\n\n[*] Listando procesos (/usr/bin/ps):\n\n");
+				system("/usr/bin/ps");
+			}
+
+		Vemos un programa en c, en el cual hacemos una llamada al sistema en la que ejecutamos un binario a través de su ruta absoluta.
+
+		Compilamos el programa y lo ejecutamos para ver que ocurre:
+
+			gcc backup.c -o backup
+
+		Ahora, modificamos el programa, y le añadimos lo mismo, pero en la llamada al sistema ejecutamos el comando ps a través de su ruta relativa:
+
+			#include <stdio.h>
+
+			void main(){
+
+				setuid(0);
+
+				printf("\n\n[*] Listando procesos (/usr/bin/ps):\n\n");
+				system("/usr/bin/ps");
+				printf("\n\n[*] Listando procesos (ps):\n\n");
+				system("ps");
+			}
+		
+		Aparentemente, el programa hace lo mismo si lo volvemos a compilar y a ejecutar, pero luego veremos como podemos aprovecharnos de esto.
+
+		Cambiamos los permisos de backuo y le damos permisos SUID -> chmod 4755 backup
+
+		En el programa en c, hay que hacer el setuid(0), porque aunque el ejecutable tenga permisos SUID, el lenguaje c tiene un
+		mecanismo de seguridad interno, que impide que ejecutes el binario desde un modo privilegiado a pesar de tener permisos SUID.
+		Por eso mismo hay que hacer el setuid(0), para controlar eso, y mantener que el binario se ejecute desde un contexto privilegiado
+		(En este caso como root, que es el propietario), ya que el ejecutable nos lo permite gracias a sus permisos (SUID).
+
+		En Linux, cuando ejecutamos un comando, como por ejemplo "whoami", lo ejecutamos de forma relativa.
+		El comando puede ser ejecutado a través de su ruta absoluta "/usr/bin/whoami" o a partir de su ruta relativa "whoami".
+		Cuando ejecutamos un comando mediante su ruta relativa, Linux internamente se encarga de encontrar la ruta absoluta del comando y ejecutarlo.
+		
+		echo $PATH -> Nos muestra el contenido de la variable $PATH, la cual contiene de forma ordenada todas aquellas rutas en las que Linux tiene
+		que comprobar si se encuentra ahí la ruta absoluta del comando que queremos ejecutar a través de su ruta relativa.
+
+		Por lo que si ejecutamos "whoami", Linux irá comprobando todas las rutas por orden de la variable $PATH, hasta que encuentre
+		en una de ellas el binario "whoami" y poder ejecutarlo con su ruta absoluta.
+
+		env -> Nos muestra el contenido de algunas variables del sistema.
+
+		En el $PATH como ya he dicho, hay una serie de rutas prioritarias definidas de izquierda a derecha.
+
+		Si queremos modificar la ruta del $PATH temporalmente (Durante la sesión actual), para por ejemplo poner un directorio en el principio
+		del $PATH deberemos usar -> export PATH=directorio:$PATH -> export PATH=/tmp:$PATH
+
+		De esta manera, podríamos introducir en el directorio /tmp un ejecutable (Le daríamos permisos de ejecución) que haga lo que nosotros
+		queramos (Un ls por ejemplo) pero dandole el nombre de otro comando, como puede ser "whoami". De esta forma, lo que pasará al ejecutar
+		el comando "whoami", es que el sistema irá a comprobar su ruta absoluta a la variable $PATH, y verá que en la primera ruta disponible
+		se encuentra un ejecutable con nombre "whoami". Así, el sistema procederá a ejecutar ese comando whoami en vez del original.
+
+		export PATH=/tmp:$PATH -> Sirve para modificar una variable de entorno.
+
+		strings backup -> A través de la utilidad string podemos listar las cadenas de caracteres que se encuentran en un binario.
+
+		Viendo el resultado de strings backup, podemos deducir que se está ejecutando el comando ps a nivel de sistema pero
+		con su ruta absoluta "/usr/bin/ps", pero se puede llegar a intuir que también lo están haciendo con su ruta relativa.
+
+		Sabiendo esto, y que tenemos permisos SUID para ejecutar el binario backup, y que el propietario es root, podríamos
+		convertirnos en root explotando el PATH HIJACKING de la siguiente manera:
+		
+			En primer lugar crearíamos un fichero con el nombre del comando que se ejecute a nivel de
+			sistema en el ejecutable backup.
+
+			Despues de crear el archivo "ps" (Que se encargará de sustituir al comando ps original)
+			le daremos permisos de ejecución para que pueda ser ejecutado. -> chmod +x ps
+
+			Dentro del archivo "ps" escribiriremos -> bash -p
+
+			De esta manera si ejecutasemos este archivo como root, ejecutaríamos una bash como root,
+			y el argumento -p es para ejecutarla con nuestro EUID (root).
+
+			Por último, deberemos hacer un path hijacking y poner en la lista de rutas de la variable $PATH
+			la ruta /tmp que contiene nuestro ejecutable sustituto de "ps", y ponerlo en primer lugar.
+
+				export PATH=/tmp:$PATH				 
+				
+			Ejecutamos el binario backup y seremos root.

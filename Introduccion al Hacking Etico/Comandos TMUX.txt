@@ -1,0 +1,50 @@
+Comandos útiles TMUX
+
+	----- Prefix -> ctrl + b -----
+
+	Cambiar nombre a la ventana de una sesión -> Prefix + b (soltar) + ,
+
+	Hacer split de la ventana actual (Dividir ventana) en horizontal -> Prefix + "
+
+	Hacer split de la ventana actual en vertical -> Prefix + %
+
+	Moverse entre paneles -> Prefix + flechas
+
+	Moverse entre paneles en sentido horario -> Prefix + o
+
+	Matar panel -> exit / Prefix + x
+
+	Intercambiar panel entre horizontal y vertical -> Prefix + "espacio"
+
+	Intercambiar dos paneles de posición -> Prefix + { / Prefix + }
+
+	Rotar paneles en sentido antihorario -> Prefix + control + o
+
+	Funcionalidad de ratón con la estética actual -> Prefix + m 
+
+	Redimensionar paneles -> Prefix + flechas (Todo a la vez sin soltar prefix)
+
+
+
+	Crear nueva ventana -> Prefix + c
+
+	Intercambiar entre ventanas sin la estética actual -> Prefix + p (Previous) / Prefix + n (Next)
+
+	Intercambiar entre ventanas con la estética actual -> Prefix + 1 (Número de ventana)
+
+	
+
+	Meter el panel actual en una ventana nueva -> Prefix + !	
+
+	Añadir un panel a una determinada ventana (Siempre de izquierda a derecha) -> Prefix + : + "join-pane -s (Source) -t (to)
+
+	
+	Hacer zoom a un determinado panel -> Prefix + z
+		
+	Entrar en modo copia -> Prefix + [
+
+	Entrar en modo selección -> Prefix + espacio
+
+	Copiar contenido -> Alt + w
+
+	Pegar contenido -> Prefix + ]
