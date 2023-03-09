@@ -1,11 +1,12 @@
 CURSO S4VITAR
 
 
+
 	PRIMEROS COMANDOS ÚTILES
 		
 		cat /etc/passwd -> Nos imprime en pantalla información acerca de los usuarios, directorios de trabajo...
 
-		cat /etc/shadows -> Solo podemos hacerlo con root, y sirve para ver los hashes de las contraseñas de los usuarios.
+		cat /etc/shadow -> Solo podemos hacerlo con root, y sirve para ver los hashes de las contraseñas de los usuarios, nombres, caducidad de cuenta y contraseña...
 
 		cat /etc/login.defs -> Informacion acerca de como se procesa el login de los usuarios.
 
@@ -67,7 +68,7 @@ CURSO S4VITAR
 		
 		groupadd School -> Añade un grupo con ese nombre.
 
-		cat etc/group -> Nos permite ver todos los grupos.	
+		cat /etc/group -> Nos permite ver todos los grupos.	
 	
 		passwd panzeroto -> Genera una contraseña para el usuario indicado.
 		
@@ -124,7 +125,7 @@ CURSO S4VITAR
 
 			./find . -exec cat /etc/passwd \; -quit -> Al tener el comando find permisos SUID, ejecutaremos ese programa como el propietario (root),
 			por lo que buscando la vulnerabilidad que presenta que ese programa tenga permisos SUID, en este caso podemos usar el flag -exec para ejecutar 
-			los programas que queramos con privilegios root, podremos inyectar cualquier comando que nosotros queremos. En este caso ha sido el cat.
+			los programas que queramos con privilegios root, podremos inyectar cualquier comando que nosotros queramos. En este caso ha sido el cat.
 
 		
 		EXPLICACIÓN DETALLADA VULNERABILIDAD SUID DEL FIND
@@ -137,16 +138,16 @@ CURSO S4VITAR
 			
 			Después de esto, usaremos el binario find, siendo un usuario sin privilegios, para encontrar recursos con permisos SUID.
 
-				find / -perm -u=s -user root -type f -exec ls -l {} \; 2>/dev/null
+				./find / -perm -u=s -user root -type f -exec ls -l {} \; 2>/dev/null
 
 			Con / le indicamos al find que busque desde la raíz del sistema.
 
-			Con -perm establecemos que solo busque recursos donde el permiso de usuario propietario "-u" sea igual a suid "-s".
+			Con -perm establecemos que solo busque recursos donde el permiso de usuario propietario "u" sea igual a suid "s".
 
 			Con -user indicamos que solo busque recursos donde el propietario sea root. Porque sino nos saldrían archivos con permisos suid pero que 
 			pertenecen a otros propietarios, y esto no nos interesa porque queremos usar los privilegios de root.
 
-			Con -type decimos el tipo de recurso que queremos. En este caso queremos encontrar archivos ejecutables.
+			Con -type decimos el tipo de recurso que queremos. En este caso queremos encontrar ficheros.
 
 			exec ls -l {} \; -> Con el parámetro -exec podemos ejecutar comandos que reciben como parámetro el resultado de la búsqueda del find.
 			En este caso, le decimos al parámetro exec que con los resultados del comando find, les haga un "ls -l" para ver sus permisos. Dentro
@@ -166,9 +167,9 @@ CURSO S4VITAR
 			En este caso, estaremos ejecutando el programa find con privilegios de root (Desde el directorio temp, pues ese find es el que tiene
 			permisos SUID) a todos los directorios y ficheros del directorio en el que estemos. Eso lo especificamos con el punto ".", pues al no
 			pasar ningún tipo de filtro al find, nos listará o encontrará todos los ficheros del direcctorio en el que nos encontremos. Después de
-			eso usaremos el parámetro -exec, que como expliqué anteriormente, sirve para ejecutar un comando dandole como parámetro lo que hayamos
+			eso usaremos el parámetro -exec, que como expliqué anteriormente, sirve para ejecutar un comando dándole como parámetro lo que hayamos
 			obtenido como resultado del find. En este caso, el find simplemente ha listado los recursos disponibles del directorio en el que nos 
-			encontramos y con -exec estamos ejecutando una shell sh (Programa al cual no usa nada de lo que el find ha dado como resultado).
+			encontramos y con -exec estamos ejecutando una shell sh (Programa el cual no usa nada de lo que el find ha dado como resultado).
 			Por eso mismo, el -exec ignora lo que haya proporcionado el find, y simplemente ejecuta el comando indicado con privilegios root.
 			De esta manera, se habrá ejecutado una shell con privilegios de root, y si hacemos un whoami veremos que somos root. 
 
@@ -176,7 +177,7 @@ CURSO S4VITAR
 			que la shell se ejecute con nuestro EUID.
 
 			El parámetro -quit lo usamos para que el comando se detenga después de la primera ejecución, porque si no lo pusiéramos, se ejecutaría
-			tantas veces, como recursos hubiera en el directorio en el que hemos ejecutado el find. Una posible solución para no tener que usar el
+			tantas veces como recursos hubiera en el directorio en el que hemos ejecutado el find. Una posible solución para no tener que usar el
 			parámetro -quit, es ejecutar el find en un directorio que no tenga nada. 
 	
 
@@ -217,7 +218,7 @@ CURSO S4VITAR
 		Si hacemos un cat /etc/passwd obtenemos lo siguiente -> pepito:x:1001:1002::/home/pepito:/bin/bash
 		En lo cual podemos distinguir el nombre del usuario, la contraseña, su UID, su GID, su home y su tipo de shell.
 
-		Cuando hacemos un su "danibz", el comando su comprueba si ese usuario se encuentra en el /etc/passwd, y si es así, nos solicita contraseña.
+		Cuando hacemos un "su danibz", el comando "su" comprueba si ese usuario se encuentra en el /etc/passwd, y si es así, nos solicita contraseña.
 
 		Cuando damos la contraseña, internamente se hashea con SHA512 como hemos visto y también la compara con el valor de :x: del /etc/passwd para ver si coinciden.
 
@@ -301,12 +302,14 @@ CURSO S4VITAR
 
 			Después de esto, tendremos que pasarle el contenido de ambas variables (Que contienen texto) al diff.
 			Esto podemos hacerlo así -> diff <(echo "$old_process") <(echo "$new_process")
-			Como vemos, con a través del echo redirige el contenido de ambas variables al comando diff como si fueses
+			
+			Como vemos, el "echo" redirige el contenido de ambas variables al comando diff como si fuesen
 			ficheros, pues estamos haciendo una redirección de entrada. El primer parámetro será old_process y el 
 			segundo new_process.
 
 			Luego habrá que filtrar los resultados del diff por aquellos que contentan un ">" o un "<" en sus cadenas.
 			Para ello explicaré algunas características del comando grep.
+			
 			En este caso usaremos grep "[\<\>]". De esta manera, le decimos que queremos filtrar por aquellas cadenas
 			que contengan la siguiente expresión regular (Esto lo hacemos a través de los corchetes). La expresión regular
 			nos dice que queremos filtrar todas aquellas cadenas que contenfan un ">" o un "<". Para indicar esto dentro
@@ -329,11 +332,13 @@ CURSO S4VITAR
 		
 		Si ejecutamos este script, veremos que se está ejecutando una tarea CRON. Podemos ver perfectamente en que ruta se
 		está ejecutando, en este caso, en /home/danibz/Desktop/file.sh
+
 		Sabiendo esto, si hacemos un ls -l de esa ruta podremos ver los permisos. Y con esto nos damos cuenta de que ese fichero
 		que esta siendo ejecutado cada ciertos intervalos de tiempo, tiene permisos de escritura para otros, y que además está
 		siendo ejecutado por root.
+
 		Como el archivo es ejecutado por root a través de las tareas cron, y tenemos capacidad de escritura en él, simplemente
-		con modificarlo y poner en el chmod 4755 /bin/bash, le daremos permisos SUID al bash siendo root, por lo que cualquier
+		con modificarlo y poner en él "chmod 4755 /bin/bash", le daremos permisos SUID al bash (cuyo propietario es root), por lo que cualquier
 		usuario podrá ejecutar bash como el propietario del mismo (root). Así que si ejecutamos el /usr/bin/bash siendo root,
 		ejecutaremos una shell con los privilegios de root, y seremos root.
 
@@ -389,7 +394,7 @@ CURSO S4VITAR
 		
 		Aparentemente, el programa hace lo mismo si lo volvemos a compilar y a ejecutar, pero luego veremos como podemos aprovecharnos de esto.
 
-		Cambiamos los permisos de backuo y le damos permisos SUID -> chmod 4755 backup
+		Cambiamos los permisos de backup y le damos permisos SUID -> chmod 4755 backup
 
 		En el programa en c, hay que hacer el setuid(0), porque aunque el ejecutable tenga permisos SUID, el lenguaje c tiene un
 		mecanismo de seguridad interno, que impide que ejecutes el binario desde un modo privilegiado a pesar de tener permisos SUID.
